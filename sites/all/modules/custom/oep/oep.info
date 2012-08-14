@@ -1,0 +1,5 @@
+; $Id$
+name = OEP: Oregon Encyclopedia Project 
+description = provide a free service to the public that provides access to articles based on topics pertaining to Oregon.
+package = Oregon Encyclopedia Project
+core = 7.x
