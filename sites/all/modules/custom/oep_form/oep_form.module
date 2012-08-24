@@ -24,72 +24,96 @@ function oep_form_form_alter(&$form, $form_state, $form_id) {
 	global $user;
 	
 	return;
-	/*
-	 * Form_id list I care of
-	 * 1. workbench_moderation_moderate_form
-	 * 2. article_node_form
-	 * 3. comment_node_article_form
-	 * 
-	 */
-	
-	/* Condition
-	 *   1. $form_id
-	 *   2. in_array("editor coordinator", $user->roles) 
-	 *   3. $form['#node']->workbench_moderation['current']->state
-	 */
-	if ($form_id == 'article_node_form') {
-		
-		/* 
-		 * TODO: Find better way to configure operation
-		 * 1. use stristr($action, 'add/article')
-		 */
-    $action = $form['#action'];
-    if (strpos($action, 'add/article') !== false) {
-      $action = 'add';
-    } elseif (strpos($action, '/edit') !== false) {
-      $action = 'edit';
-    } else {
-      $action = False;
-    }
-    $current_state = $form['#node']->workbench_moderation['current']->state;
-    
-    // coordinator role
-    if ($action && in_array("test_coordinator", $user->roles)){
-    	oep_coordinator_state_form($form, $action, $current_state);
-    }
-    // Editorial Coorinator Role
-    elseif ($action && in_array("editorial coordinator", $user->roles)){
-    	oep_coordinator_state_form($form, $action, $current_state);
-    }
-    // author role
-    elseif ($action && in_array("test_author", $user->roles)){
-      oep_author_state_form($form, $action, $current_state);
-    }
-    // Author Role
-    elseif ($action && in_array("author", $user->roles)){
-    	oep_author_state_form($form, $action, $current_state);
-    }
-    // managing editor Role
-    elseif ($action && in_array("managing editor", $user->roles)){
-    }
-    // fact checker Role
-    elseif ($action && in_array("fact checker", $user->roles)){
-    }
-    // editor Role
-    elseif ($action && in_array("editor", $user->roles)){
-    }
-    // editor in chief Role
-    elseif ($action && in_array("editor in chief", $user->roles)){
-    }
-    /** TODO:  */
-    else {
-    
-    }
-    
-    /* Unset properties globally */
-    unset($form['actions']['preview']);
-  }
 }
+
+/**
+ * Implements hook_block_view_alter(&$data, $block)
+ */
+function oep_form_block_view_alter(&$data, $block){
+	
+	return;
+}
+
+/**
+ * Implements hook_comment_view_alter(&$build)
+ */
+function oep_form_comment_view_alter(&$build){
+	
+	return;
+}
+
+/**
+ * Implements hook_contextual_links_view_alter(&$element, $items)
+ */
+function oep_form_contextual_links_view_alter(&$element, $items){
+	
+	return;
+}
+
+/**
+ * hook_entity_view($entity, $type, $view_mode, $langcode)
+ */
+function oep_form_entity_view($entity, $type, $view_mode, $langcode){
+	return;
+}
+
+/**
+ * hook_entity_view_alter(&$build, $type)
+ */
+function oep_form_entity_view_alter(&$build, $type){
+	return;
+}
+
+/**
+ * hook_page_build(&$page)
+ */
+function oep_form_page_build(&$page){
+	return;
+}
+/**
+ * hook_page_alter(&$page)
+ */
+function oep_form_page_alter(&$page){
+	global $user;
+	return;
+}
+
+/**
+ * hook_field_attach_delete_revision($entity_type, $entity)
+ */
+function oep_form_field_attach_delete_revision($entity_type, $entity){
+	return;
+}
+
+/**
+ * hook_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, &$items)
+ */
+function oep_form_field_delete_revision($entity_type, $entity, $field, $instance, $langcode, &$items){
+	return;
+}
+
+/**
+ * hook_field_storage_delete_revision($entity_type, $entity, $fields)
+ */
+function oep_form_field_storage_delete_revision($entity_type, $entity, $fields){
+	return;
+}
+/**
+ * hook_node_revision_delete($node)
+ */
+function oep_form_node_revision_delete($node){
+	return;
+}
+/**
+ * hook_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items)
+ */
+function oep_form_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items){
+	return;
+}
+
+
+
+
 
 /*
  * Coordinator Role
