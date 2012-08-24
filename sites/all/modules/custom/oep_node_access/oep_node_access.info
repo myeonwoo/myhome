@@ -1,0 +1,5 @@
+; $Id$
+name = OEP: Node Acess
+description = provide second lyaer of node access
+package = Build a Module
+core = 7.x

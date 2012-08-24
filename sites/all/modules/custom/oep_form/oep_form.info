@@ -1,0 +1,5 @@
+; $Id$
+name = OEP: Build Form
+description = Modify edit form based on node state and user role
+package = Build a Module
+core = 7.x

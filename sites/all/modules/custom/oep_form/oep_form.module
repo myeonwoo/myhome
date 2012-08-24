@@ -1,0 +1,431 @@
+<?php
+
+/**
+ * State List: 'in_progress', 'assigned_entry', 'needs_review', 'reviewer_assigned', 'review_completed', 'assigned_revision', 'withdrawn_from_author', 'published'
+ */
+
+
+/**
+ * Implements hook_field_widget_form_alter().
+ *
+ * Adding an autocomplete user input to the node form.
+ */
+function oep_form_field_widget_form_alter(&$element, &$form_state, $context){
+	
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Adding an autocomplete user input to the node form.
+ */
+function oep_form_form_alter(&$form, $form_state, $form_id) {
+	
+	global $user;
+	
+	return;
+	/*
+	 * Form_id list I care of
+	 * 1. workbench_moderation_moderate_form
+	 * 2. article_node_form
+	 * 3. comment_node_article_form
+	 * 
+	 */
+	
+	/* Condition
+	 *   1. $form_id
+	 *   2. in_array("editor coordinator", $user->roles) 
+	 *   3. $form['#node']->workbench_moderation['current']->state
+	 */
+	if ($form_id == 'article_node_form') {
+		
+		/* 
+		 * TODO: Find better way to configure operation
+		 * 1. use stristr($action, 'add/article')
+		 */
+    $action = $form['#action'];
+    if (strpos($action, 'add/article') !== false) {
+      $action = 'add';
+    } elseif (strpos($action, '/edit') !== false) {
+      $action = 'edit';
+    } else {
+      $action = False;
+    }
+    $current_state = $form['#node']->workbench_moderation['current']->state;
+    
+    // coordinator role
+    if ($action && in_array("test_coordinator", $user->roles)){
+    	oep_coordinator_state_form($form, $action, $current_state);
+    }
+    // Editorial Coorinator Role
+    elseif ($action && in_array("editorial coordinator", $user->roles)){
+    	oep_coordinator_state_form($form, $action, $current_state);
+    }
+    // author role
+    elseif ($action && in_array("test_author", $user->roles)){
+      oep_author_state_form($form, $action, $current_state);
+    }
+    // Author Role
+    elseif ($action && in_array("author", $user->roles)){
+    	oep_author_state_form($form, $action, $current_state);
+    }
+    // managing editor Role
+    elseif ($action && in_array("managing editor", $user->roles)){
+    }
+    // fact checker Role
+    elseif ($action && in_array("fact checker", $user->roles)){
+    }
+    // editor Role
+    elseif ($action && in_array("editor", $user->roles)){
+    }
+    // editor in chief Role
+    elseif ($action && in_array("editor in chief", $user->roles)){
+    }
+    /** TODO:  */
+    else {
+    
+    }
+    
+    /* Unset properties globally */
+    unset($form['actions']['preview']);
+  }
+}
+
+/*
+ * Coordinator Role
+ */
+function oep_coordinator_state_form(&$form, $action, $state){
+	
+	return;
+	
+	if ($action == 'add'){
+    //unset($form['title']);
+    //unset($form['field_authors']);
+    //unset($form['field_submission_length']);
+    unset($form['field_sources']);
+    //unset($form['field_deadline']);
+    unset($form['body']);
+    //unset($form['field_image']);
+		unset($form['field_media']);
+		//unset($form['field_tags']);
+		unset($form['field_oep_image']);
+    
+		//unset($form['revision_information']);
+    // OR
+    //$form['revision_information']['#collapsible'] = false;
+    //unset($form['revision_information']['#group']);
+    //unset($form['revision_information']['log']);
+    //unset($form['options']);
+		
+    //unset($form['additional_settings']);
+		unset($form['comment_settings']);
+	}
+	
+	elseif (($action == 'edit') && in_array($state, array('in_progress', 'assigned_entry')) ){
+    /* Unset properties globaly for coordinator*/
+    //unset($form['title']);
+    //unset($form['field_authors']);
+    //unset($form['field_submission_length']);
+    //unset($form['field_sources']);
+    //unset($form['field_deadline']);
+    //unset($form['body']);
+    //unset($form['field_image']);
+		//unset($form['field_media']);
+		unset($form['field_tags']);
+		//unset($form['field_oep_image']);
+    
+		//unset($form['revision_information']);
+    // OR
+    $form['revision_information']['#collapsible'] = false;
+    unset($form['revision_information']['#group']);
+    unset($form['revision_information']['log']);
+    unset($form['options']);
+		
+    unset($form['additional_settings']);
+		unset($form['comment_settings']);
+    
+    /** TODO: add current state */
+    $nid = $form['#node']->nid;
+    $result = db_query('SELECT body_value FROM {field_revision_body} WHERE entity_id = :nid order by revision_id', array(':nid' => $nid));
+    $form['state'] = array(
+        '#type' => 'markup',
+        '#markup' => '<p><b>From State</b> : '. $form['#node']->workbench_moderation['current']->from_state .
+        '<br /><b>Current State</b> : '. $form['#node']->workbench_moderation['current']->state. '<p />',
+        '#weight' => 4,
+    );
+    
+    /* TODO: Add content of revisions */
+    $rnum = 0;
+    $revisions_header = '<ul>';
+    $revisions_body = '';
+    foreach ($result as $row){
+      $rnum += 1;
+      $revisions[] = $row->body_value;
+      $revisions_header .= '<li><a href="#tabs-' . intval($rnum) .'">' . 'revision '. intval($rnum) . '</a></li>';
+      $revisions_body .= '<div id="tabs-' . intval($rnum) .'"><p>' . $row->body_value . '</p></div>';
+      $revision_content = $row->body_value;
+    }
+    $revisions_header .= '</ul>';
+    $revision_content = '<div class="demo"><div id="tabs">' . $revisions_header . $revisions_body . '</div></div>';
+    $form['revisions'] = array(
+        '#type' => 'markup',
+        '#markup' => '<b>Revisions</b> : <br />'. $revision_content. '<br />',
+        //'#markup' => '<b>Revisions</b> : <br />'. $revisions_header . $revisions_body . '<br />',
+        '#weight' => 4,
+    );
+    
+	} elseif (($action == 'edit') && in_array($state, array('in_progress', 'assigned_entry')) ){
+		
+	} elseif ($action == 'admin'){
+		
+	} else {
+		unset($form['title']);
+    unset($form['field_authors']);
+    unset($form['field_submission_length']);
+    unset($form['field_sources']);
+    unset($form['field_deadline']);
+    unset($form['body']);
+    unset($form['field_image']);
+		unset($form['field_media']);
+		unset($form['field_tags']);
+		unset($form['field_oep_image']);
+    
+		unset($form['revision_information']);
+    // OR
+    //$form['revision_information']['#collapsible'] = false;
+    //unset($form['revision_information']['#group']);
+    //unset($form['revision_information']['log']);
+    //unset($form['options']);
+		
+    unset($form['additional_settings']);
+		unset($form['comment_settings']);
+	}
+	
+}
+
+/*
+ * Author Role
+ */
+function oep_author_state_form(&$form, $action, $state){
+	
+	return;
+	
+	if ($action == 'add'){
+		/*
+		 * TODO: It shouldn't be reach here
+		 */
+		unset($form['title']);
+    unset($form['field_authors']);
+    unset($form['field_submission_length']);
+    unset($form['field_sources']);
+    unset($form['field_deadline']);
+    unset($form['body']);
+    unset($form['field_image']);
+		unset($form['field_media']);
+		unset($form['field_tags']);
+		unset($form['field_oep_image']);
+    
+		unset($form['revision_information']);
+    // OR
+    //$form['revision_information']['#collapsible'] = false;
+    //unset($form['revision_information']['#group']);
+    //unset($form['revision_information']['log']);
+    //unset($form['options']);
+		
+    unset($form['additional_settings']);
+		unset($form['comment_settings']);
+	} elseif (($action == 'edit') && in_array($state, array('in_progress','assigned_entry')) ){
+    /* Unset properties globaly for coordinator*/
+    unset($form['title']);
+    unset($form['field_authors']);
+    unset($form['field_submission_length']);
+    unset($form['field_sources']);
+    
+    unset($form['field_deadline']);
+    //unset($form['body']);
+    unset($form['field_image']);
+    unset($form['field_media']);
+    unset($form['field_tags']);
+    
+    //$form['revision_information']['#collapsible'] = false;
+    //unset($form['revision_information']['#group']);
+    //unset($form['revision_information']['log']);
+    //unset($form['options']);
+    unset($form['revision_information']);
+    //unset($form['additional_settings']);
+    
+	} elseif ($action == 'admin'){
+		
+	} else {
+    unset($form['title']);
+    unset($form['field_authors']);
+    unset($form['field_submission_length']);
+    unset($form['field_sources']);
+    unset($form['field_deadline']);
+    unset($form['body']);
+    unset($form['field_image']);
+		unset($form['field_media']);
+		unset($form['field_tags']);
+		unset($form['field_oep_image']);
+    
+		unset($form['revision_information']);
+    // OR
+    //$form['revision_information']['#collapsible'] = false;
+    //unset($form['revision_information']['#group']);
+    //unset($form['revision_information']['log']);
+    //unset($form['options']);
+		
+    unset($form['additional_settings']);
+		unset($form['comment_settings']);
+	}
+}
+
+/* TODO: Implement
+ * Editor Role
+*/
+function oep_editor_state_form(&$form, $action, $state){
+	
+	return;
+	/* No add action on Editor */
+	if (False && $action == 'add'){
+
+	}
+
+	elseif ( ($action == 'edit') && in_array($state, array('in_progress', 'assigned_entry', 'needs_review', 'reviewer_assigned', 'review_completed', 'assigned_revision', 'withdrawn_from_author', 'published'))){
+
+		unset($form['title']);
+		unset($form['field_authors']);
+		unset($form['field_submission_length']);
+		unset($form['field_sources']);
+		unset($form['field_deadline']);
+		unset($form['body']);
+		unset($form['field_image']);
+		unset($form['field_media']);
+		unset($form['field_tags']);
+		unset($form['field_oep_image']);
+
+		unset($form['revision_information']);
+		// OR
+		//$form['revision_information']['#collapsible'] = false;
+		//unset($form['revision_information']['#group']);
+		//unset($form['revision_information']['log']);
+		//unset($form['options']);
+
+		unset($form['additional_settings']);
+		unset($form['comment_settings']);
+	}
+}
+
+/* TODO: Implement
+ * Managing Editor Role
+*/
+function oep_managing_editor_state_form(&$form, $action, $state){
+
+	return;
+	/* No add action on Editor */
+	if (False && $action == 'add'){
+
+	}
+
+	elseif ( ($action == 'edit') && in_array($state, array('in_progress', 'assigned_entry', 'needs_review', 'reviewer_assigned', 'review_completed', 'assigned_revision', 'withdrawn_from_author', 'published'))){
+
+		unset($form['title']);
+		unset($form['field_authors']);
+		unset($form['field_submission_length']);
+		unset($form['field_sources']);
+		unset($form['field_deadline']);
+		unset($form['body']);
+		unset($form['field_image']);
+		unset($form['field_media']);
+		unset($form['field_tags']);
+		unset($form['field_oep_image']);
+
+		unset($form['revision_information']);
+		// OR
+		//$form['revision_information']['#collapsible'] = false;
+		//unset($form['revision_information']['#group']);
+		//unset($form['revision_information']['log']);
+		//unset($form['options']);
+
+		unset($form['additional_settings']);
+		unset($form['comment_settings']);
+	}
+}
+
+/* TODO: Implement
+ * Fact Checker Role
+*/
+function oep_fact_checker_state_form(&$form, $action, $state){
+
+	return;
+	/* No add action on Editor */
+	if (False && $action == 'add'){
+
+	}
+
+	elseif ( ($action == 'edit') && in_array($state, array('in_progress', 'assigned_entry', 'needs_review', 'reviewer_assigned', 'review_completed', 'assigned_revision', 'withdrawn_from_author', 'published'))){
+
+		unset($form['title']);
+		unset($form['field_authors']);
+		unset($form['field_submission_length']);
+		unset($form['field_sources']);
+		unset($form['field_deadline']);
+		unset($form['body']);
+		unset($form['field_image']);
+		unset($form['field_media']);
+		unset($form['field_tags']);
+		unset($form['field_oep_image']);
+
+		unset($form['revision_information']);
+		// OR
+		//$form['revision_information']['#collapsible'] = false;
+		//unset($form['revision_information']['#group']);
+		//unset($form['revision_information']['log']);
+		//unset($form['options']);
+
+		unset($form['additional_settings']);
+		unset($form['comment_settings']);
+	}
+}
+
+/* 
+ * TODO: Implement
+ * Editor in Chief Role
+*/
+function oep_editor_in_chief_editor_state_form(&$form, $action, $state){
+
+	return;
+	
+	/* No add action on Editor */
+	if (False && $action == 'add'){
+
+	}
+
+	elseif ( ($action == 'edit') && in_array($state, array('in_progress', 'assigned_entry', 'needs_review', 'reviewer_assigned', 'review_completed', 'assigned_revision', 'withdrawn_from_author', 'published'))){
+
+		unset($form['title']);
+		unset($form['field_authors']);
+		unset($form['field_submission_length']);
+		unset($form['field_sources']);
+		unset($form['field_deadline']);
+		unset($form['body']);
+		unset($form['field_image']);
+		unset($form['field_media']);
+		unset($form['field_tags']);
+		unset($form['field_oep_image']);
+
+		unset($form['revision_information']);
+		// OR
+		//$form['revision_information']['#collapsible'] = false;
+		//unset($form['revision_information']['#group']);
+		//unset($form['revision_information']['log']);
+		//unset($form['options']);
+
+		unset($form['additional_settings']);
+		unset($form['comment_settings']);
+	}
+}
+
+
+
+

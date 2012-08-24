@@ -1,0 +1,79 @@
+<?php 
+/**
+ * Implements hook_node_access().
+ *
+ * For more info on how node access rights work, see:
+ * http://api.drupal.org/api/drupal/modules--node--node.module/group/node_access/7
+ *
+ * For more info on this hook, see:
+ * http://api.drupal.org/api/drupal/modules--node--node.api.php/function/hook_node_access/7
+ *
+ * Note that if we return NODE_ACCESS_ALLOW or NODE_ACCESS_DENY, that will
+ * override any other access settings set by other modules.
+ */
+function oep_node_access_node_access($node, $op, $account) {
+	global $user;
+
+	return NODE_ACCESS_IGNORE;
+	//NODE_ACCESS_ALLOW
+	//NODE_ACCESS_IGNORE
+	//return NODE_ACCESS_DENY;
+	// Collect assigned author ids.
+	$access_uids = array();
+	if (isset($node->field_authors)){
+		foreach ($node->field_authors as $elements){
+			foreach ($elements as $value){
+				if (isset($value['target_id'])){
+					$access_uids[] = $value['target_id'];
+				}
+			}
+		}
+	}
+	
+	$author = isset($node->authors_in_process) ? $node->authors_in_process : NULL;
+	$node_current_state = isset($node->workbench_moderation['current']->state) ? $node->workbench_moderation['current']->state : NULL;
+	if ($node_current_state == 'new_entry'){
+		switch ($op){
+			case 'update':
+			case 'view':
+				if (in_array("editor coordinator", $user->roles)){
+					return NODE_ACCESS_ALLOW;
+				}
+				return NODE_ACCESS_ALLOW;
+		}
+		
+	} elseif ($node_current_state == 'assigned_entry'){
+		switch ($op){
+			case 'update':
+			case 'view':
+				if (in_array("editor coordinator", $user->roles)){
+					return NODE_ACCESS_ALLOW;
+				}
+				if (in_array("author", $user->roles) && in_array($user->uid, $access_uids)){
+					return NODE_ACCESS_ALLOW;
+				}
+		}
+	} elseif ($node_current_state == 'needs_review'){
+		switch ($op){
+			case 'update':
+			case 'view':
+				if (in_array("editor coordinator", $user->roles)){
+					return NODE_ACCESS_ALLOW;
+				}
+		}
+	} 
+	/* TODO: Assign user roles */
+	elseif ($node_current_state == 'reviewer_assigned'){
+		switch ($op){
+			case 'update':
+				break;
+			case 'view':
+				break;
+		}
+	} 
+	return NODE_ACCESS_DENY;
+	
+	//NODE_ACCESS_ALLOW
+	//NODE_ACCESS_IGNORE
+	//return NODE_ACCESS_DENY;
+}
