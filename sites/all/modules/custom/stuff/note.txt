@@ -1,0 +1,3 @@
+
+newstuff_install
+  Create new Content type
