@@ -1,1 +1,0 @@
-alert('This was loaded via ajax');
